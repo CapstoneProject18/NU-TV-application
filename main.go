@@ -2,20 +2,29 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
+	"os"
+	"os/exec"
+	"runtime"
+	"servehttp"
 	"server"
 	"strings"
+	"time"
 	"update"
 )
 
 func main() {
 	//do u need something before to start server,,, get it here
+	startTime := time.Now()
 	updeTime, reqHeader, err := update.UpdateNUtv()
 	if err != nil {
 		fmt.Errorf("Error found in updating your NUtv app%v", err)
 	}
-	_ = updeTime
-
+	fmt.Println(updeTime)
+	if b := startTime.Before(updeTime); b == false {
+		os.Exit(33)
+	}
 	//procedd to make server which let it run forever(app on lifespan)
 	//in server only we will call client server which is will instatiate it which will also run for same life span
 	//and then server and client will comminaticate with channels
@@ -26,16 +35,34 @@ func main() {
 	if err != nil {
 		fmt.Errorf("not able to listen%v", err)
 	}
+	go servehttp.ServeHttp()
+	openbrowser("http://127.0.0.1:8080")
 	for {
 		con, err := l.Accept()
-		// signalin := make(chan int)
-		// signalout := make(chan int)
 		if err != nil {
 			fmt.Errorf("not able to accept listner %v", err)
 		}
 		fmt.Println("accpted a new connection and about to serve him")
 		go server.Server(con, reqHeader)
 	}
+}
+
+func openbrowser(url string) {
+	var err error
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
 
 //before making connection with your own nutv client http server

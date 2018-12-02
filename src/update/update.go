@@ -20,9 +20,14 @@ type ReqHeader struct {
 //UpdateNUtv starts and collect essential data before init ...
 func UpdateNUtv() (time.Time, ReqHeader, error) {
 	var reqh ReqHeader
+	var err error
 	reqh.MyAddr = MyAddr()
-	// reqh.MyList = getMovieL()
-	err := as.GetRunningServices()
+	reqh.MyList, err = getMovieL()
+	if err != nil {
+		os.Exit(12)
+	}
+	// getMovieL()
+	err = as.GetRunningServices()
 	if err != nil {
 		return time.Now(), reqh, fmt.Errorf("error in upating your application, kindly contact Bramhastra")
 	}
@@ -32,35 +37,34 @@ func UpdateNUtv() (time.Time, ReqHeader, error) {
 	return time.Now(), reqh, fmt.Errorf("sorry")
 }
 
-func getMovieL() {
+func getMovieL() ([]string, error) {
 	var list []string
 	h, err := os.Hostname()
 	if err != nil {
-		os.Exit(1)
+		return nil, fmt.Errorf("not getting hostname")
 	}
 
-	f, err := os.Open("./mylist.txt")
+	f, err := os.OpenFile("mylist.txt", os.O_TRUNC|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
-		f, err = os.Create("./mylist.txt")
-		if err != nil {
-			os.Exit(2)
-		}
+		return nil, fmt.Errorf("something wrong with mylist.txt")
 	}
-
+	defer f.Close()
 	switch runtime.GOOS {
 	case "linux":
 		{
 			files, err := ioutil.ReadDir(fmt.Sprintf("/home/%s/Desktop", h))
 			if err != nil {
-				fmt.Errorf("path for Dektop is not correct%v", err)
+				return nil, fmt.Errorf("path for Dektop is not correct%v", err)
 			}
 			for _, n := range files {
 				if strings.HasPrefix(n.Name(), "mov") {
 					movies, err := ioutil.ReadDir(fmt.Sprintf("/home/%s/Desktop/%s", h, n.Name()))
 					if err != nil {
-						return
+						return nil, fmt.Errorf("not able to read movies folder")
 					}
 					for _, movie := range movies {
+
+						// fmt.Println(movie)
 						nameMov := ismovie(movie.Name())
 						if nameMov != "nil" {
 							list = append(list, nameMov)
@@ -69,17 +73,42 @@ func getMovieL() {
 				}
 			}
 			for _, listv := range list {
+				f.WriteString(listv + "\n")
+			}
+			return list, nil
 
-				f.WriteString(listv)
+		}
+	case "windows":
+		{
+			files, err := ioutil.ReadDir(fmt.Sprintf("C:\Users\%s\Desktop", h))
+			if err != nil {
+				return nil, fmt.Errorf("path for Dektop is not correct%v", err)
 			}
-			return
-			for _, v := range list {
-				fmt.Println(v)
+			for _, n := range files {
+				if strings.HasPrefix(n.Name(), "mov") {
+					movies, err := ioutil.ReadDir(fmt.Sprintf("C:\Users\%s\Desktop\%s", h, n.Name()))
+					if err != nil {
+						return nil, fmt.Errorf("not able to read movies folder")
+					}
+					for _, movie := range movies {
+
+						// fmt.Println(movie)
+						nameMov := ismovie(movie.Name())
+						if nameMov != "nil" {
+							list = append(list, nameMov)
+						}
+					}
+				}
 			}
+			for _, listv := range list {
+				f.WriteString(listv + "\n")
+			}
+			return list, nil
+
 		}
 	default:
 		{
-			return
+			return nil, fmt.Errorf("only linux can be accepted as os")
 		}
 	}
 
@@ -93,6 +122,7 @@ func ismovie(mn string) string {
 		".mp4",
 		".mpg",
 		".asf",
+		".mkv",
 	}
 
 	for _, r := range typeArr {

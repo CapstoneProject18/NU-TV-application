@@ -7,6 +7,7 @@ import (
 	"os"
 )
 
+//GetRunningServices error write result to aliveservices.txt
 func GetRunningServices() error {
 	// var serviceChan chan string = make(chan, string)
 	f, err := os.Open("allIP.txt")
@@ -30,6 +31,7 @@ func GetRunningServices() error {
 	for scanner.Scan() {
 
 		aliveIP := scanner.Text()
+		// fmt.Println(aliveIP)
 		in <- aliveIP
 		go runningService(in, out)
 		select {
@@ -47,47 +49,18 @@ func GetRunningServices() error {
 
 	}
 	return nil
-	// f, err := os.OpenFile
-
 }
 
 func runningService(in <-chan string, out chan<- string) {
-	// fmt.Println("i m being called")
-	// err := os.Remove("aliveServices.txt")
-	// if err != nil {
-	// 	fmt.Errorf("unable to remove older data of aliveServices.txt%v", err)
-	// }
-	// f, err := os.Create("aliveServices.txt")
-	// if err != nil {
-	// 	fmt.Errorf("unable to open aliveServices.txt %v", err)
-	// 	return
-	// }
-	// w := bufio.NewWriter(f)
-	// defer f.Close()
-	// tcpAddress, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:6969", aliveIP))
-	// if err != nil {
-	// 	fmt.Errorf("big mastakes in allIP files might %v", err)
-	// }
 	aliveIP := <-in
 	con, err := net.Dial("tcp", fmt.Sprintf("%s:6969", aliveIP))
-
 	if err != nil {
-		fmt.Errorf("cannot establish connection to this ip %v", err)
-		//out <- nil
+		_ = fmt.Errorf("cannot establish connection to this ip %v", err)
 		return
 	}
 	defer con.Close()
 	fmt.Println("hurrey, connection established", con)
 	fmt.Println(aliveIP)
 	out <- aliveIP
-	// f.WriteString(fmt.Sprintf("%s\n", aliveIP))
-	// _, err = fmt.Fprintln(w, aliveIP)
-	// if err != nil {
-	// 	fmt.Errorf("unabe to write to aliveServices.txt %v", err)
-	// }
-	// err = w.Flush()
-	// if err != nil {
-	// 	fmt.Errorf("unable to flush %v", err)
-	// }
-
+	fmt.Println(aliveIP)
 }

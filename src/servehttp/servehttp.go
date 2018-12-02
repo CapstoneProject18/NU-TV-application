@@ -1,22 +1,58 @@
 package servehttp
 
 import (
+	"bufio"
 	"fmt"
-	"net"
+	"html/template"
 	"net/http"
+	"os"
+
+	"github.com/gorilla/mux"
 )
 
-func ServeHttp() {
-	tcpAddr, err := net.ResolveTCPAddr("tcp", "172.19.16.239:6969")
-	con, err := net.DialTCP("tcp", tcpAddr, nil)
-	if err != nil {
-		fmt.Errorf("hello%v", err)
-	}
-	_ = con
-	http.ListenAndServe("127.0.0.1:8080", nil)
-	http.HandleFunc("/", handleRoot)
+var IndexTemplate *template.Template
+
+type Movies struct {
+	Name string
+	Path string
 }
 
-func handleRoot(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
+var MoviesList []Movies
+
+func init() {
+	var f *os.File
+	var err error
+	f, err = os.Open("mylist.txt")
+	if err != nil {
+		os.Exit(2121)
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		MoviesList = append(MoviesList, Movies{
+			Name: line,
+		})
+	}
+	if err = scanner.Err(); err != nil {
+		fmt.Print(err)
+	}
+	IndexTemplate, err = template.ParseFiles("IndexTemplate.html")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(121)
+	}
+
+}
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	IndexTemplate.ExecuteTemplate(w, "IndexTemplate", MoviesList)
+
+}
+func ServeHttp() {
+	r := mux.NewRouter().StrictSlash(true)
+	http.Handle("/static/", http.FileServer(http.Dir("static")))
+	r.Handle("/", http.HandlerFunc(homeHandler))
+
+	http.Handle("/", r)
+	http.ListenAndServe("127.0.0.1:8080", nil)
 }
