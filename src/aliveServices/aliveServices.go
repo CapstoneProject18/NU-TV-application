@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 //GetRunningServices error write result to aliveservices.txt
@@ -53,6 +54,7 @@ func GetRunningServices() error {
 
 func runningService(in <-chan string, out chan<- string) {
 	aliveIP := <-in
+	aliveIP = strings.TrimRight(aliveIP, "\n")
 	con, err := net.Dial("tcp", fmt.Sprintf("%s:6969", aliveIP))
 	if err != nil {
 		_ = fmt.Errorf("cannot establish connection to this ip %v", err)
