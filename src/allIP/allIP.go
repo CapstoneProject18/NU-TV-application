@@ -63,7 +63,22 @@ func receivePong(pongNum int, pongChan <-chan Pong, doneChan chan<- []Pong) {
 }
 
 func AllIP() {
-	hosts, _ := Hosts("172.19.16.239/21")
+	var h string
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		os.Stderr.WriteString("Oops: " + err.Error() + "\n")
+		os.Exit(1)
+	}
+
+	for _, a := range addrs {
+		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				os.Stdout.WriteString(ipnet.IP.String() + "\n")
+				h = ipnet.IP.String()
+			}
+		}
+	}
+	hosts, _ := Hosts(h + "/21")
 	concurrentMax := 100
 	pingChan := make(chan string, concurrentMax)
 	pongChan := make(chan Pong, len(hosts))
@@ -82,9 +97,9 @@ func AllIP() {
 
 	alives := <-doneChan
 	// pp.Println(alives)
-	f, err := os.Create("allIP.txt")
+	f, err := os.OpenFile("allIP.txt", os.O_TRUNC|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
-		fmt.Errorf("%v ahhah", err)
+		_ = fmt.Errorf("%v ahhah", err)
 		// f, err = os.Create("allIP.txt")
 		// if err != nil {
 		// 	fmt.Errorf("unable to create file%v", err)

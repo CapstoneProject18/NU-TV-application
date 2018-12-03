@@ -2,12 +2,14 @@ package update
 
 import (
 	as "aliveServices"
+	"allIP"
 	"bufio"
 	"encoding/gob"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
+	"os/user"
 	"runtime"
 	"strings"
 	"time"
@@ -23,6 +25,8 @@ var OthersHeaders []ReqHeader
 
 //UpdateNUtv starts and collect essential data before init ...
 func UpdateNUtv() (time.Time, ReqHeader, error) {
+	fmt.Println("string updates of allIP")
+	allIP.AllIP()
 	var reqh ReqHeader
 	var err error
 	reqh.MyAddr = MyAddr()
@@ -88,10 +92,12 @@ func onlineList() error {
 }
 func getMovieL() ([]string, error) {
 	var list []string
-	h, err := os.Hostname()
+	// h, err := os.Hostname()
+	u, err := user.Current()
 	if err != nil {
 		return nil, fmt.Errorf("not getting hostname")
 	}
+	h := u.Username
 
 	f, err := os.OpenFile("mylist.txt", os.O_TRUNC|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
