@@ -2,6 +2,8 @@ package update
 
 import (
 	as "aliveServices"
+	"bufio"
+	"encoding/gob"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -17,6 +19,8 @@ type ReqHeader struct {
 	MyList []string
 }
 
+var OthersHeaders []ReqHeader
+
 //UpdateNUtv starts and collect essential data before init ...
 func UpdateNUtv() (time.Time, ReqHeader, error) {
 	var reqh ReqHeader
@@ -31,12 +35,57 @@ func UpdateNUtv() (time.Time, ReqHeader, error) {
 	if err != nil {
 		return time.Now(), reqh, fmt.Errorf("error in upating your application, kindly contact Bramhastra")
 	}
+	err = onlineList()
+	if err != nil {
+		fmt.Println("sorry, no other is online, Better Luck!")
+	}
 	if reqh.MyAddr != nil && reqh.MyList != nil {
 		return time.Now(), reqh, nil
 	}
 	return time.Now(), reqh, fmt.Errorf("sorry")
 }
 
+func onlineList() error {
+	f, err := os.Open("aliveServices.txt")
+	if err != nil {
+		return fmt.Errorf("%v", err)
+	}
+	defer f.Close()
+	fw, err := os.OpenFile("othersList.txt", os.O_TRUNC|os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		return err
+	}
+	defer fw.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		conn, err := net.Dial("tcp", line+":6969")
+		if err != nil {
+			return fmt.Errorf("%v", err)
+		}
+		// var buf [512]byte
+		defer conn.Close()
+		conn.Write([]byte("reqHead "))
+		decoder := gob.NewDecoder(conn)
+		rh := &ReqHeader{}
+		decoder.Decode(rh)
+		// _, err = conn.Read(buf[0:])
+		// if err != nil {
+		// 	return fmt.Errorf("%v", err)
+		// }
+		fmt.Println(rh.MyAddr)
+		OthersHeaders = append(OthersHeaders, *rh)
+		for _, val := range rh.MyList {
+			fmt.Fprintf(fw, val)
+		}
+		// fmt.Println(string(buf[0:]))
+		return nil
+	}
+	if err = scanner.Err(); err != nil {
+		return fmt.Errorf("%v", err)
+	}
+	return nil
+}
 func getMovieL() ([]string, error) {
 	var list []string
 	h, err := os.Hostname()
