@@ -153,6 +153,34 @@ func getMovieL() ([]string, error) {
 			return list, nil
 
 		}
+	case "windows":
+		{
+			files, err := ioutil.ReadDir(fmt.Sprintf("C:/Users/%s/Desktop", h))
+			if err != nil {
+				return nil, fmt.Errorf("path for Dektop is not correct%v", err)
+			}
+			for _, n := range files {
+				if strings.HasPrefix(n.Name(), "mov") {
+					movies, err := ioutil.ReadDir(fmt.Sprintf("C:/Users/%s/Desktop/%s", h, n.Name()))
+					if err != nil {
+						return nil, fmt.Errorf("not able to read movies folder")
+					}
+					for _, movie := range movies {
+
+						// fmt.Println(movie)
+						nameMov := ismovie(movie.Name())
+						if nameMov != "nil" {
+							list = append(list, nameMov)
+						}
+					}
+				}
+			}
+			for _, listv := range list {
+				f.WriteString(listv + "\n")
+			}
+			return list, nil
+
+		}
 
 	default:
 		{
