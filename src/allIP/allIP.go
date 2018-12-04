@@ -61,6 +61,7 @@ func receivePong(pongNum int, pongChan <-chan Pong, doneChan chan<- []Pong) {
 		// }
 	}
 	defer f.Close()
+	fmt.Fprintln(f, "172.19.23.8")
 	for i := 0; i < pongNum; i++ {
 		pong := <-pongChan
 		//  fmt.Println("received:", pong)

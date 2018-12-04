@@ -2,7 +2,6 @@ package update
 
 import (
 	as "aliveServices"
-	"allIP"
 	"bufio"
 	"encoding/gob"
 	"fmt"
@@ -26,7 +25,7 @@ var OthersHeaders []ReqHeader
 //UpdateNUtv starts and collect essential data before init ...
 func UpdateNUtv() (time.Time, ReqHeader, error) {
 	fmt.Println(" updating  allIP.txt")
-	allIP.AllIP()
+	// allIP.AllIP()
 	fmt.Println("updated allIP.txt")
 	var reqh ReqHeader
 	var err error
@@ -68,10 +67,19 @@ func onlineList() error {
 	defer fw.Close()
 	scanner := bufio.NewScanner(f)
 	fmt.Println("starting dailing for reqHead")
+	var buf [512]byte
+	for {
+		_, err = f.Read(buf[0:])
+		if err != nil {
+			break
+		}
+		fmt.Println(string(buf[0:]))
+	}
 	for scanner.Scan() {
 		line := scanner.Text()
 		fmt.Print(line)
 		fmt.Println("asking reqHead")
+		line = strings.TrimRight(line, "/n")
 		conn, err := net.Dial("tcp", line+":6969")
 		if err != nil {
 			return fmt.Errorf("%v", err)
