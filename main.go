@@ -37,6 +37,7 @@ func main() {
 	}
 	go servehttp.ServeHttp()
 	openbrowser("http://127.0.0.1:8080")
+	fmt.Println("browser is just opened")
 	for {
 		con, err := l.Accept()
 		if err != nil {

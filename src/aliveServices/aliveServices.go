@@ -17,13 +17,10 @@ func GetRunningServices() error {
 		return fmt.Errorf("not able to read allIP.txt %v", err)
 	}
 	defer f.Close()
-	err = os.Remove("aliveServices.txt")
+
+	fw, err := os.OpenFile("aliveServices.txt", os.O_TRUNC|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
-		return fmt.Errorf("not able to delete aliveServices.txt %v", err)
-	}
-	fw, err := os.Create("aliveServices.txt")
-	if err != nil {
-		return fmt.Errorf("not able to create aliveServices.txt %v", err)
+		return err
 	}
 	defer fw.Close()
 	in := make(chan string, 1)
@@ -55,13 +52,19 @@ func GetRunningServices() error {
 func runningService(in <-chan string, out chan<- string) {
 	aliveIP := <-in
 	aliveIP = strings.TrimRight(aliveIP, "\n")
+	fw, err := os.OpenFile("aliveServices.txt", os.O_TRUNC|os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		return
+	}
+	defer fw.Close()
 	con, err := net.Dial("tcp", fmt.Sprintf("%s:6969", aliveIP))
 	if err != nil {
 		_ = fmt.Errorf("cannot establish connection to this ip %v", err)
 		return
 	}
 	defer con.Close()
-	fmt.Println("hurrey, connection established", con)
+	fmt.Fprintln(fw, aliveIP)
+	fmt.Println("hurrey, connection established with", aliveIP)
 	fmt.Println(aliveIP)
 	out <- aliveIP
 	fmt.Println(aliveIP)

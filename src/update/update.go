@@ -25,8 +25,9 @@ var OthersHeaders []ReqHeader
 
 //UpdateNUtv starts and collect essential data before init ...
 func UpdateNUtv() (time.Time, ReqHeader, error) {
-	fmt.Println("string updates of allIP")
+	fmt.Println(" updating  allIP.txt")
 	allIP.AllIP()
+	fmt.Println("updated allIP.txt")
 	var reqh ReqHeader
 	var err error
 	reqh.MyAddr = MyAddr()
@@ -35,15 +36,20 @@ func UpdateNUtv() (time.Time, ReqHeader, error) {
 		os.Exit(12)
 	}
 	// getMovieL()
+	fmt.Println("Finding other nodes started")
 	err = as.GetRunningServices()
 	if err != nil {
 		return time.Now(), reqh, fmt.Errorf("error in upating your application, kindly contact Bramhastra")
 	}
+	fmt.Println("prepared aliveServices.txt")
+	fmt.Println("starting listing online vidoes in the network")
 	err = onlineList()
 	if err != nil {
 		fmt.Println("sorry, no other is online, Better Luck!")
 	}
+
 	if reqh.MyAddr != nil && reqh.MyList != nil {
+		fmt.Println("Your App is Updated!")
 		return time.Now(), reqh, nil
 	}
 	return time.Now(), reqh, fmt.Errorf("sorry")
@@ -61,8 +67,11 @@ func onlineList() error {
 	}
 	defer fw.Close()
 	scanner := bufio.NewScanner(f)
+	fmt.Println("starting dailing for reqHead")
 	for scanner.Scan() {
 		line := scanner.Text()
+		fmt.Print(line)
+		fmt.Println("asking reqHead")
 		conn, err := net.Dial("tcp", line+":6969")
 		if err != nil {
 			return fmt.Errorf("%v", err)
@@ -77,10 +86,13 @@ func onlineList() error {
 		// if err != nil {
 		// 	return fmt.Errorf("%v", err)
 		// }
-		fmt.Println(rh.MyAddr)
+
 		OthersHeaders = append(OthersHeaders, *rh)
 		for _, val := range rh.MyList {
 			fmt.Fprintf(fw, val)
+		}
+		for _, val := range rh.MyList {
+			fmt.Println(val)
 		}
 		// fmt.Println(string(buf[0:]))
 		return nil

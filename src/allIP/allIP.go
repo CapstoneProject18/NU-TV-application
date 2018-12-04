@@ -1,11 +1,11 @@
 package allIP
 
 import (
-	"bufio"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 func Hosts(cidr string) ([]string, error) {
@@ -52,33 +52,53 @@ func ping(pingChan <-chan string, pongChan chan<- Pong) {
 
 func receivePong(pongNum int, pongChan <-chan Pong, doneChan chan<- []Pong) {
 	var alives []Pong
+	f, err := os.OpenFile("allIP.txt", os.O_TRUNC|os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		_ = fmt.Errorf("%v ahhah", err)
+		// f, err = os.Create("allIP.txt")
+		// if err != nil {
+		// 	fmt.Errorf("unable to create file%v", err)
+		// }
+	}
+	defer f.Close()
 	for i := 0; i < pongNum; i++ {
 		pong := <-pongChan
 		//  fmt.Println("received:", pong)
 		if pong.Alive {
+			// fmt.Println("alive wow", pong)
 			alives = append(alives, pong)
+			fmt.Fprintln(f, pong.Ip)
 		}
 	}
 	doneChan <- alives
+	// fmt.Println(doneChan)
 }
+func MyAddr() net.Addr {
 
-func AllIP() {
-	var h string
-	addrs, err := net.InterfaceAddrs()
+	netInterfaces, err := net.Interfaces()
 	if err != nil {
-		os.Stderr.WriteString("Oops: " + err.Error() + "\n")
-		os.Exit(1)
+		fmt.Errorf("cannot find net Interfaces")
 	}
-
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				os.Stdout.WriteString(ipnet.IP.String() + "\n")
-				h = ipnet.IP.String()
+	for _, iface := range netInterfaces {
+		if strings.HasPrefix(iface.Name, "wlp") {
+			address, err := iface.Addrs()
+			if err != nil {
+				fmt.Errorf("cannot find interfaces address%v", err)
 			}
+			return address[0]
+
 		}
+
+		// fmt.Println(index, iface.Name, address)
 	}
-	hosts, _ := Hosts(h + "/21")
+	return nil
+}
+func AllIP() {
+
+	host := MyAddr()
+	fmt.Print(host.String())
+
+	hosts, _ := Hosts(host.String())
 	concurrentMax := 100
 	pingChan := make(chan string, concurrentMax)
 	pongChan := make(chan Pong, len(hosts))
@@ -91,30 +111,26 @@ func AllIP() {
 	go receivePong(len(hosts), pongChan, doneChan)
 
 	for _, ip := range hosts {
+		// fmt.Println(ip)
+
 		pingChan <- ip
 		// fmt.Println("sent: " + ip)
 	}
 
 	alives := <-doneChan
-	// pp.Println(alives)
-	f, err := os.OpenFile("allIP.txt", os.O_TRUNC|os.O_WRONLY, os.ModeAppend)
-	if err != nil {
-		_ = fmt.Errorf("%v ahhah", err)
-		// f, err = os.Create("allIP.txt")
-		// if err != nil {
-		// 	fmt.Errorf("unable to create file%v", err)
-		// }
-	}
-	defer f.Close()
-	w := bufio.NewWriter(f)
-	for _, aliveIP := range alives {
+	_ = alives
+	// fmt.Println(alives, "alives")
+	// fmt.Fprintln(f, alives)
 
-		// fmt.Println(aliveIP.Ip)
-		fmt.Fprintln(w, aliveIP.Ip)
-	}
-	err = w.Flush()
-	if err != nil {
-		fmt.Errorf("unable to flush %v", err)
-	}
+	// w := bufio.NewWriter(f)
+	// for _, aliveIP := range alives {
+
+	// 	fmt.Println(aliveIP.Ip)
+	// 	fmt.Fprintln(w, aliveIP.Ip)
+	// }
+	// err = w.Flush()
+	// if err != nil {
+	// 	_ = fmt.Errorf("unable to flush %v", err)
+	// }
 	// fmt.Println(alives.IP)
 }
