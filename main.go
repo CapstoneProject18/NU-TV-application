@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"online"
 	"os"
 	"os/exec"
 	"runtime"
@@ -25,6 +26,12 @@ func main() {
 	if b := startTime.Before(updeTime); b == false {
 		os.Exit(33)
 	}
+	err = online.OnlineList()
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+
 	//procedd to make server which let it run forever(app on lifespan)
 	//in server only we will call client server which is will instatiate it which will also run for same life span
 	//and then server and client will comminaticate with channels
