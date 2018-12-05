@@ -13,7 +13,7 @@ import (
 // }
 // var moviePath map[string][string] //map[moviename][ movie path (ip+ file path )]
 func Server(con net.Conn, reqh update.ReqHeader) {
-	defer con.Close()
+
 	fmt.Println("i m a node server which is about to serve tcp connection to all other node server in nutv network")
 	encoder := gob.NewEncoder(con)
 	for {
@@ -28,7 +28,10 @@ func Server(con net.Conn, reqh update.ReqHeader) {
 		s := string(msgBytes[0:n])
 		// fmt.Print(s[0:7])
 		if s[0:7] == "reqHead" {
-			encoder.Encode(reqh)
+			err = encoder.Encode(reqh)
+			if err != nil {
+				fmt.Println(err, "oh my god")
+			}
 			// con.Write([]byte(fmt.Sprintf("%v", reqh)))
 			fmt.Println(s)
 		} else if s[0:2] == "sm" {
@@ -36,4 +39,5 @@ func Server(con net.Conn, reqh update.ReqHeader) {
 			fmt.Println("send me movie", s)
 		}
 	}
+	con.Close()
 }

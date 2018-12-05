@@ -29,7 +29,7 @@ func main() {
 	err = online.OnlineList()
 	if err != nil {
 		fmt.Println(err)
-		panic(err)
+
 	}
 
 	//procedd to make server which let it run forever(app on lifespan)
@@ -49,6 +49,7 @@ func main() {
 		con, err := l.Accept()
 		if err != nil {
 			fmt.Errorf("not able to accept listner %v", err)
+			continue
 		}
 		fmt.Println("accpted a new connection and about to serve him")
 		go server.Server(con, reqHeader)
