@@ -155,12 +155,12 @@ func MyAddr() net.Addr {
 		fmt.Errorf("cannot find net Interfaces")
 	}
 	for _, iface := range netInterfaces {
-		if strings.HasPrefix(iface.Name, "wlp") || strings.HasPrefix(iface.Name, "enp") || strings.HasPrefix(iface.Name, "WI") {
+		if strings.HasPrefix(iface.Name, "wlp") {
 			address, err := iface.Addrs()
 			if err != nil {
 				fmt.Errorf("cannot find interfaces address%v", err)
 			}
-			return address[0]
+			return address[1]
 
 		}
 
